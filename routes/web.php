@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\StatementController;
+use App\Http\Controllers\PdfEditorController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -45,3 +46,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             ->name('statement.upload');
     });
 });
+
+Route::get('/pdf-editor',            [PdfEditorController::class, 'index'])->name('pdf.editor');
+Route::post('/pdf-editor/upload',    [PdfEditorController::class, 'upload'])->name('pdf.upload');
+Route::post('/pdf-editor/save',      [PdfEditorController::class, 'save'])->name('pdf.save');
+Route::get('/pdf-editor/download/{filename}', [PdfEditorController::class, 'download'])->name('pdf.download');
