@@ -20,7 +20,7 @@
             min-height: 100vh;
         }
 
-        /* ── Top Bar ── */
+
         #topbar {
             display: flex;
             align-items: center;
@@ -74,7 +74,7 @@
             opacity: .85;
         }
 
-        /* ── Drop Zone ── */
+
         #drop-zone {
             display: flex;
             flex-direction: column;
@@ -97,13 +97,13 @@
             color: #666;
         }
 
-        /* ── Editor Layout ── */
+
         #editor-layout {
             display: none;
             height: calc(100vh - 56px);
         }
 
-        /* Sidebar */
+        
         #sidebar {
             width: 240px;
             background: #16213e;
@@ -150,7 +150,7 @@
             padding: 3px;
         }
 
-        /* Canvas area */
+        
         #canvas-area {
             overflow: auto;
             height: 100%;
@@ -171,54 +171,118 @@
             display: block;
         }
 
-        .text-overlay {
+        
+           Canva-like text box system
+           States: default → hover → selected → editing
+           ═══════════════════════════════════════════════ */
+
+
+        .text-box {
             position: absolute;
-            background: transparent;
             border: 1px solid transparent;
-            cursor: text;
-            padding: 0;
-            margin: 0;
-            outline: none;
-            color: transparent;
-            font-family: Helvetica, Arial, sans-serif;
-            line-height: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            transition: border-color .15s, background .15s;
+            cursor: default;
+            user-select: none;
             z-index: 10;
+            transition: border-color .1s;
         }
 
-        .text-overlay:hover {
-            border-color: rgba(233, 69, 96, .5);
-            background: rgba(233, 69, 96, .08);
+        .text-box:hover {
+            border-color: rgba(233, 69, 96, .35);
         }
 
-        .text-overlay:focus {
-            border-color: #e94560;
-            background: rgba(255, 255, 255, .95);
-            color: #000;
+        
+        .text-box.selected {
+            border: 1.5px solid #4a90d9;
             z-index: 20;
+            cursor: move;
         }
 
-        .text-overlay.modified {
-            color: #000 !important;
-            background: rgba(255, 255, 255, 0.92);
-            border-color: rgba(15, 155, 88, .7);
-            border-radius: 2px;
+        
+        .text-box.editing {
+            border: 1.5px solid #e94560;
+            z-index: 30;
+            cursor: text;
         }
 
-        .text-overlay.modified:hover {
-            border-color: rgba(15, 155, 88, 1);
-            background: rgba(255, 255, 255, 0.96);
+        
+        .text-box.modified {
+            border-color: rgba(15, 155, 88, .6);
         }
-
-        .text-overlay.modified:focus {
-            background: rgba(255, 255, 255, .95);
-            color: #000;
+        .text-box.modified.selected {
             border-color: #0f9b58;
         }
 
-        /* Loading spinner */
+
+        .text-box-content {
+            width: 100%;
+            height: 100%;
+            outline: none;
+            font-family: Helvetica, Arial, sans-serif;
+            line-height: 1.15;
+            white-space: nowrap;
+            overflow: hidden;
+            color: transparent;         
+            padding: 0;
+            margin: 0;
+        }
+
+        .text-box.modified .text-box-content {
+            color: #000 !important;
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .text-box.editing .text-box-content {
+            color: #000 !important;
+            background: rgba(255, 255, 255, 0.97);
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow: auto;
+            cursor: text;
+        }
+
+
+        .resize-handle {
+            display: none;
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #4a90d9;
+            border: 1px solid #fff;
+            border-radius: 1px;
+            z-index: 40;
+        }
+
+        .text-box.selected .resize-handle,
+        .text-box.editing .resize-handle {
+            display: block;
+        }
+
+        .text-box.modified.selected .resize-handle,
+        .text-box.modified.editing .resize-handle {
+            background: #0f9b58;
+        }
+
+        
+        .rh-nw { top: -4px;    left: -4px;   cursor: nwse-resize; }
+        .rh-ne { top: -4px;    right: -4px;  cursor: nesw-resize; }
+        .rh-sw { bottom: -4px; left: -4px;   cursor: nesw-resize; }
+        .rh-se { bottom: -4px; right: -4px;  cursor: nwse-resize; }
+
+
+        .rh-n  { top: -4px;    left: 50%;  transform: translateX(-50%); cursor: ns-resize; }
+        .rh-s  { bottom: -4px; left: 50%;  transform: translateX(-50%); cursor: ns-resize; }
+        .rh-w  { top: 50%;     left: -4px; transform: translateY(-50%); cursor: ew-resize; }
+        .rh-e  { top: 50%;     right: -4px; transform: translateY(-50%); cursor: ew-resize; }
+
+
+        #overlay-container {
+            pointer-events: none;
+        }
+        #overlay-container .text-box {
+            pointer-events: auto;
+        }
+
+        
         #loading {
             display: none;
             position: fixed;
@@ -250,7 +314,7 @@
             }
         }
 
-        /* Toast */
+        
         #toast {
             position: fixed;
             bottom: 24px;
