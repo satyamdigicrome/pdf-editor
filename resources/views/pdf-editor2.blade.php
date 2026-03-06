@@ -187,8 +187,10 @@
             /* pointer-events managed by JS (none by default, auto when editing) */
         }
 
-        /* Hover: show faint outline so user knows what's clickable */
-        .text-box:hover {
+        /* Hover: show faint outline so user knows what's clickable.
+           NOTE: boxes have pointer-events:none — the 'hovered' class is
+           toggled by the overlay's mousemove handler in pdf-editor.js */
+        .text-box.hovered {
             border-color: rgba(233, 69, 96, .4);
             background: rgba(233, 69, 96, .04);
         }
@@ -205,7 +207,7 @@
         .text-box.modified {
             border-color: rgba(15, 155, 88, .6);
         }
-        .text-box.modified:hover {
+        .text-box.modified.hovered {
             border-color: rgba(15, 155, 88, 1);
         }
         .text-box.modified.editing {

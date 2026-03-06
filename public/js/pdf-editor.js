@@ -1,7 +1,7 @@
 pdfjsLib.GlobalWorkerOptions.workerSrc =
     'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-// STATE
+
 const state = {
     pdfDoc:       null,
     currentPage:  1,
@@ -29,7 +29,7 @@ const btnReset     = $('btn-reset');
 const fileInput    = $('file-input');
 const fileNameEl   = $('file-name');
 
-// UTILITIES
+
 function showLoading(text = 'Processing...') {
     loadingText.textContent = text;
     loading.classList.add('show');
@@ -47,7 +47,7 @@ function csrf() {
     return document.querySelector('meta[name="csrf-token"]').content;
 }
 
-// FILE HANDLING
+
 fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
 
 dropZone.addEventListener('dragover', e => {
@@ -90,17 +90,18 @@ async function handleFile(file) {
     }
 }
 
-// EDITOR INIT
+
 function initEditor() {
     dropZone.style.display     = 'none';
     editorLayout.style.display = 'block';
     btnSave.style.display      = 'inline-block';
+    btnSave.disabled           = true;   
     btnReset.style.display     = 'inline-block';
     buildThumbs();
     renderPage(1);
 }
 
-// THUMBNAILS
+
 async function buildThumbs() {
     thumbsEl.innerHTML = '';
     const total = state.pdfDoc.numPages;
@@ -127,7 +128,7 @@ async function buildThumbs() {
     }
 }
 
-// PAGE RENDER
+
 async function renderPage(pageNum) {
     state.currentPage = pageNum;
     if (state.editingBox) {
@@ -147,8 +148,9 @@ async function renderPage(pageNum) {
     }
 }
 
-// OVERLAY BUILDER
+
 function buildOverlay(pageNum, vp) {
+    _hoveredBox = null;          
     overlay.innerHTML = '';
     overlay.style.position      = 'absolute';
     overlay.style.top           = '0';
@@ -168,7 +170,7 @@ function buildOverlay(pageNum, vp) {
     });
 }
 
-// CREATE TEXT BOX — no individual event handlers
+
 function createTextBox(block, scaleX, scaleY) {
     const saved = state.changes[block.id];
     const box = document.createElement('div');
@@ -187,7 +189,7 @@ function createTextBox(block, scaleX, scaleY) {
     box.style.top           = posY + 'px';
     box.style.width         = boxW + 'px';
     box.style.height        = boxH + 'px';
-    box.style.pointerEvents = 'none'; // overlay handles all clicks via bbox math
+    box.style.pointerEvents = 'none'; 
 
     const content = document.createElement('div');
     content.className   = 'text-box-content';
@@ -206,16 +208,10 @@ function createTextBox(block, scaleX, scaleY) {
     return box;
 }
 
-// ============================================================
-// CORE: OVERLAY-LEVEL CLICK HANDLER
-// KEY FIX: picks SMALLEST bbox containing the click point.
-// Overlapping boxes never hijack each other.
-// Single click = edit mode (PDFfiller / Sejda style).
-// ============================================================
 overlay.addEventListener('mousedown', function (e) {
     if (state.activeAction) return;
 
-    // Resize handle?
+    
     if (e.target.classList.contains('resize-handle')) {
         e.preventDefault();
         e.stopPropagation();
@@ -224,8 +220,8 @@ overlay.addEventListener('mousedown', function (e) {
         return;
     }
 
-    // Click inside the already-editing box?
-    // Let native contentEditable handle cursor placement.
+    
+    
     if (state.editingBox && state.editingBox.contains(e.target)) {
         return;
     }
@@ -234,7 +230,7 @@ overlay.addEventListener('mousedown', function (e) {
     const clickX = e.clientX - oRect.left;
     const clickY = e.clientY - oRect.top;
 
-    // All boxes whose bbox contains the click point
+    
     const hits = [...overlay.querySelectorAll('.text-box')].filter(box => {
         const l = parseFloat(box.style.left);
         const t = parseFloat(box.style.top);
@@ -242,7 +238,7 @@ overlay.addEventListener('mousedown', function (e) {
                clickY >= t && clickY <= t + box.offsetHeight;
     });
 
-    // Empty canvas click
+    
     if (!hits.length) {
         e.stopPropagation();
         if (state.editingBox) {
@@ -252,7 +248,7 @@ overlay.addEventListener('mousedown', function (e) {
         return;
     }
 
-    // Pick SMALLEST area = most specific match
+    
     const target = hits.reduce((best, box) =>
         (box.offsetWidth * box.offsetHeight < best.offsetWidth * best.offsetHeight) ? box : best
     );
@@ -265,12 +261,46 @@ overlay.addEventListener('mousedown', function (e) {
         state.editingBox = null;
     }
 
-    // Single click = enter edit mode
+    
     if (!target.classList.contains('editing')) {
         enterEditMode(target);
     }
 
     setupPotentialDrag(e, target);
+});
+
+
+
+
+let _hoveredBox = null;
+
+overlay.addEventListener('mousemove', function (e) {
+    if (state.activeAction) return;
+    const oRect = overlay.getBoundingClientRect();
+    const mx    = e.clientX - oRect.left;
+    const my    = e.clientY - oRect.top;
+    const hits  = [...overlay.querySelectorAll('.text-box')].filter(box => {
+        const l = parseFloat(box.style.left);
+        const t = parseFloat(box.style.top);
+        return mx >= l && mx <= l + box.offsetWidth &&
+               my >= t && my <= t + box.offsetHeight;
+    });
+    const target = hits.length
+        ? hits.reduce((best, box) =>
+              (box.offsetWidth * box.offsetHeight < best.offsetWidth * best.offsetHeight)
+                  ? box : best)
+        : null;
+    if (target !== _hoveredBox) {
+        if (_hoveredBox) _hoveredBox.classList.remove('hovered');
+        _hoveredBox = target;
+        if (_hoveredBox) _hoveredBox.classList.add('hovered');
+    }
+    overlay.style.cursor = target ? 'text' : '';
+});
+
+overlay.addEventListener('mouseleave', function () {
+    if (_hoveredBox) { _hoveredBox.classList.remove('hovered'); _hoveredBox = null; }
+    overlay.style.cursor = '';
 });
 
 document.addEventListener('mousedown', function (e) {
@@ -283,7 +313,7 @@ document.addEventListener('mousedown', function (e) {
     }
 });
 
-// EDIT MODE
+
 function enterEditMode(box) {
     if (box.classList.contains('editing')) return;
     box.classList.add('editing');
@@ -380,7 +410,7 @@ function autoExpandAndTrack(box) {
     btnSave.disabled = Object.keys(state.changes).length === 0;
 }
 
-// DRAG — activates only if mouse moves > 5 px
+
 let _drag = null;
 
 function setupPotentialDrag(e, box) {
@@ -431,7 +461,7 @@ function _onDragUp() {
     }
 }
 
-// RESIZE
+
 let _resize = {};
 
 function startResize(e, box, pos) {
@@ -474,7 +504,7 @@ function _onResizeUp() {
     autoExpandAndTrack(box);
 }
 
-// KEYBOARD
+
 document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
         if (state.editingBox) {
@@ -495,7 +525,7 @@ document.addEventListener('keydown', e => {
     }
 });
 
-// SAVE & DOWNLOAD
+
 btnSave.addEventListener('click', async () => {
     if (state.editingBox) {
         exitAndSave(state.editingBox);
@@ -525,7 +555,7 @@ btnSave.addEventListener('click', async () => {
     }
 });
 
-// RESET
+
 btnReset.addEventListener('click', () => {
     state.pdfDoc       = null;
     state.filename     = null;
