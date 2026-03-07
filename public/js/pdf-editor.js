@@ -196,6 +196,17 @@ function createTextBox(block, scaleX, scaleY) {
     content.textContent = saved ? saved.new_text : block.text;
     content.style.fontSize = (block.font_size * scaleY) + 'px';
     box.appendChild(content);
+    const handle = document.createElement('div');
+    handle.className = 'text-box-drag-handle';
+    handle.innerHTML = '&#9654;&#9664;&nbsp;Move';
+    handle.title = 'Drag to move';
+    handle.style.pointerEvents = 'auto';
+    handle.addEventListener('mousedown', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        startBoxDrag(e, box);
+    });
+    box.appendChild(handle);
 
     ['nw', 'ne', 'sw', 'se', 'n', 's', 'w', 'e'].forEach(pos => {
         const h = document.createElement('div');
@@ -435,8 +446,10 @@ function _onDragMove(e) {
         state.activeAction = 'drag';
         const box = _drag.box;
         box.classList.add('dragging');
-        const content = box.querySelector('.text-box-content');
-        content.contentEditable = 'false';
+        if (!_drag.fromHandle) {
+            const content = box.querySelector('.text-box-content');
+            content.contentEditable = 'false';
+        }
     }
     if (_drag.active) {
         e.preventDefault();
@@ -459,6 +472,34 @@ function _onDragUp() {
         content.focus();
         autoExpandAndTrack(box);
     }
+}
+
+function startBoxDrag(e, box) {
+    if (state.activeAction) return;
+    state.activeAction = 'drag';
+    box.classList.add('dragging');
+    _drag = {
+        box,
+        startX:    e.clientX,
+        startY:    e.clientY,
+        startLeft: parseFloat(box.style.left),
+        startTop:  parseFloat(box.style.top),
+        active:    true,
+        fromHandle: true,
+    };
+    document.addEventListener('mousemove', _onDragMove);
+    document.addEventListener('mouseup',   _onDragHandleUp);
+}
+
+function _onDragHandleUp() {
+    document.removeEventListener('mousemove', _onDragMove);
+    document.removeEventListener('mouseup',   _onDragHandleUp);
+    if (!_drag) return;
+    const { box } = _drag;
+    _drag = null;
+    state.activeAction = null;
+    box.classList.remove('dragging');
+    autoExpandAndTrack(box);
 }
 
 

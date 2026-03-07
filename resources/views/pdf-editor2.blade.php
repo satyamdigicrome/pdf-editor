@@ -201,7 +201,35 @@
             z-index: 50;
             cursor: text;
             background: #fff;
+            overflow: visible;   /* allow drag handle to sit above box */
         }
+
+        /* ── Drag handle (visible only when editing) ── */
+        .text-box-drag-handle {
+            display: none;
+            position: absolute;
+            top: -22px;
+            left: 0;
+            height: 20px;
+            min-width: 64px;
+            max-width: 140px;
+            background: #e94560;
+            border-radius: 4px 4px 0 0;
+            cursor: grab;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #fff;
+            user-select: none;
+            padding: 0 8px;
+            white-space: nowrap;
+            z-index: 70;
+        }
+        .text-box.editing  .text-box-drag-handle { display: flex; }
+        .text-box.modified .text-box-drag-handle { background: #0f9b58; }
+        .text-box.dragging .text-box-drag-handle { cursor: grabbing !important; }
 
         /* Modified (saved, not currently editing): green border */
         .text-box.modified {
